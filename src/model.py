@@ -10,6 +10,7 @@ class Config:
     layer_norm_eps: float = 1e-5
     d_vocab: int = 50257
     init_range: float = 0.02
+    n_ctx: int = 1024
     
 cfg = Config()
 
@@ -43,7 +44,19 @@ class Embed(nn.Module):
         if self.cfg.debug: print("Embeddings:", embed.shape)
         return embed
     
+class PosEmbed(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.cfg = cfg
+        self.W_pos = nn.Parameter(torch.empty((cfg.n_ctx, cfg.d_model)))
+        nn.init.normal_(self.W_pos, std=self.cfg.init_range)
         
+    def forward(self, tokens):
+        if cfg.debug: print("Tokens:", tokens.shape)
+        pos_embed = self.W_pos[:tokens.size(1), :]
+        pos_embed = einops.repeat(pos_embed, "position d_model -> batch position d_model", batch=tokens.size(0))
+        if cfg.debug: print("pos_embed", pos_embed.shape)
+        return pos_embed
     
 # Positional Embedding
 # Attention

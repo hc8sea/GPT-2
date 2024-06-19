@@ -1,13 +1,14 @@
 import pytest
 import torch
-from model import Config, LayerNorm, Embed
+from model import Config, LayerNorm, Embed, PosEmbed
 from easy_transformer import EasyTransformer
 
 reference_gpt2 = EasyTransformer.from_pretrained("gpt2-small", fold_ln=False, center_unembed=False, center_writing_weights=False)
 
 @pytest.mark.parametrize("cls, shape", [
     (LayerNorm, [2, 4, 768]),
-    # (Embed, [2, 4])
+    (Embed, [2, 4]),
+    (PosEmbed, [2, 4])
 ])
 
 def test_rand_float(cls, shape):
@@ -44,7 +45,8 @@ logits, cache = reference_gpt2.run_with_cache(tokens)
 
 @pytest.mark.parametrize("cls, gpt2_layer, input_name", [
     (LayerNorm, reference_gpt2.ln_final, "blocks.11.hook_resid_post"),
-    (Embed, reference_gpt2.embed, tokens)
+    (Embed, reference_gpt2.embed, tokens),
+    (PosEmbed, reference_gpt2.pos_embed, tokens),
 ])
 
 def test_load_gpt2(cls, gpt2_layer, input_name, cache_dict=cache.cache_dict):
