@@ -1,28 +1,15 @@
 import einops
-# from fancy_einsum import einsum
 from dataclasses import dataclass
-# from easy_transformer import EasyTransformer
 import torch
 import torch.nn as nn
-# import numpy as np
-# import math
-# from easy_transformer.utils import get_corner, gelu_new, tokenize_and_concatenate
-# import tqdm.auto as tqdm
-
-
-# Layer Normalization
-"""
-Make mean zero
-Normalize to have variance=1
-Scale with learned weights
-Translate with learned bias"""
-
 
 @dataclass
 class Config:
     d_model: int = 768
     debug: bool = True
     layer_norm_eps: float = 1e-5
+    d_vocab: int = 50257
+    init_range: float = 0.02
     
 cfg = Config()
 
@@ -34,7 +21,6 @@ class LayerNorm(nn.Module):
         
     def forward(self, residual):
         if cfg.debug: print("Residual:", residual.shape)
-        #Make mean zero
         residual = residual - einops.reduce(residual, "batch position d_model -> batch position 1", "mean") 
         scale = (einops.reduce(residual.pow(2), "batch position d_model -> batch position 1", "mean") + cfg.layer_norm_eps).sqrt()
         normalized = residual / scale
@@ -43,8 +29,22 @@ class LayerNorm(nn.Module):
         return normalized
         
 
-
-# Embedding
+class Embed(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.cfg = cfg
+        self.W_E = nn.Parameter(torch.empty((cfg.d_vocab, cfg.d_model)))
+        nn.init.normal_(self.W_E, std=self.cfg.init_range)
+    
+    def forward(self, tokens):
+        # tokens: [batch, position]
+        if self.cfg.debug: print("Tokens:", tokens.shape)
+        embed = self.W_E[tokens, :] # [batch, position, d_model]
+        if self.cfg.debug: print("Embeddings:", embed.shape)
+        return embed
+    
+        
+    
 # Positional Embedding
 # Attention
 # MLP
