@@ -1,1 +1,3 @@
-# pytorch-gpt2
+# GPT-2 PyTorch Implementation
+
+For practicing purposes.
